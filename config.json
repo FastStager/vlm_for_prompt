@@ -1,0 +1,125 @@
+{
+    "FURNITURE_CONFIG": {
+        "living room": {
+            "essential": [
+                "sofa",
+                "coffee table",
+                "tv stand"
+            ],
+            "optional": [
+                "armchair",
+                "bookshelf",
+                "rug",
+                "floor lamp"
+            ]
+        },
+        "bedroom": {
+            "essential": [
+                "bed",
+                "dresser",
+                "nightstand"
+            ],
+            "optional": [
+                "desk",
+                "mirror",
+                "wardrobe"
+            ]
+        },
+        "bathroom": {
+            "essential": [
+                "vanity",
+                "mirror",
+                "storage cabinet"
+            ],
+            "optional": [
+                "hamper",
+                "towel rack",
+                "plant"
+            ]
+        },
+        "kitchen": {
+            "essential": [
+                "cabinets",
+                "countertop",
+                "stools"
+            ],
+            "optional": [
+                "island",
+                "pendant lights",
+                "hanging rack"
+            ]
+        }
+    },
+    "STYLE_MATERIALS": {
+        "scandinavian": {
+            "wood": "light oak or ash",
+            "colors": [
+                "white",
+                "cream",
+                "light gray",
+                "natural wood tones"
+            ],
+            "fabrics": [
+                "linen",
+                "cotton",
+                "wool"
+            ]
+        },
+        "japandi": {
+            "wood": "teak or dark stained oak",
+            "colors": [
+                "beige",
+                "warm white",
+                "sage green",
+                "charcoal"
+            ],
+            "fabrics": [
+                "cotton",
+                "linen",
+                "bamboo"
+            ]
+        },
+        "modern": {
+            "materials": "walnut, chrome, or glass",
+            "colors": [
+                "black",
+                "white",
+                "gray",
+                "chrome"
+            ],
+            "fabrics": [
+                "leather",
+                "microfiber",
+                "velvet"
+            ]
+        },
+        "minimalist": {
+            "wood": "white oak or maple",
+            "colors": [
+                "white",
+                "light gray",
+                "black",
+                "monochromatic tones"
+            ],
+            "fabrics": [
+                "cotton",
+                "linen",
+                "simple textiles"
+            ]
+        },
+        "industrial": {
+            "materials": "reclaimed wood or exposed concrete",
+            "colors": [
+                "black",
+                "gray",
+                "rust",
+                "copper"
+            ],
+            "fabrics": [
+                "leather",
+                "canvas",
+                "metal"
+            ]
+        }
+    }
+}
