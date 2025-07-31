@@ -1,0 +1,14 @@
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.1.2
+transformers==4.41.2
+accelerate==0.30.1
+qwen-vl-utils
+quanto
+runpod
+fastapi
+uvicorn[standard]
+gradio
+requests
+python-multipart
+psutil
+Pillow
