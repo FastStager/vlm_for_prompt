@@ -8,44 +8,66 @@ from accelerate import init_empty_weights, infer_auto_device_map
 import io
 from PIL import Image
 
-def validate_image_url(image_url, min_resolution=(400, 400)):
+def load_and_validate_image(image_source, source_type, min_resolution=(400, 400)):
     """
-    Validates an image URL before processing.
-    Checks for accessibility, content type, integrity, and minimum resolution.
+    Loads an image from a URL, file, or Base64 string and validates it.
     
     Args:
-        image_url (str): The URL of the image to validate.
+        image_source (str): The URL, file path, or Base64 string.
+        source_type (str): Must be 'url', 'file', or 'base64'.
         min_resolution (tuple): The minimum (width, height) required.
         
+    Returns:
+        PIL.Image.Image: The validated image object.
+        
     Raises:
-        ValueError: If the URL is invalid or the image does not meet criteria.
+        ValueError: If the source is invalid or the image doesn't meet criteria.
     """
-    print(f"Validating image URL: {image_url}...")
+    image_data = None
+    if source_type == 'url':
+        try:
+            response = requests.get(image_source, timeout=10)
+            response.raise_for_status()
+            image_data = response.content
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"Network error or invalid URL: {e}")
+    
+    elif source_type == 'file':
+        try:
+            with open(image_source, 'rb') as f:
+                image_data = f.read()
+        except FileNotFoundError:
+            raise ValueError(f"Image file not found at path: {image_source}")
+        except Exception as e:
+            raise ValueError(f"Could not read file: {e}")
+
+    elif source_type == 'base64':
+        try:
+            padding_needed = len(image_source) % 4
+            if padding_needed:
+                image_source += '=' * (4 - padding_needed)
+            image_data = base64.b64decode(image_source)
+        except (binascii.Error, TypeError) as e:
+            raise ValueError(f"Invalid Base64 string provided: {e}")
+
+    if not image_data:
+        raise ValueError("Could not load image data from the provided source.")
+
     try:
-        response = requests.get(image_url, stream=True, timeout=10)
-        response.raise_for_status()
-
-        content_type = response.headers.get('content-type', '').lower()
-        if not content_type.startswith('image/'):
-            raise ValueError(f"URL does not point to a valid image (Content-Type: {content_type}).")
-
-        image_data = response.content
         image = Image.open(io.BytesIO(image_data))
-        image.verify()
-
-        image = Image.open(io.BytesIO(image_data))
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        image.verify() 
+        image = Image.open(io.BytesIO(image_data)).convert('RGB')
+        
         if image.width < min_resolution[0] or image.height < min_resolution[1]:
-            raise ValueError(f"Image resolution ({image.width}x{image.height}) is below the required minimum of {min_resolution[0]}x{min_resolution[1]}.")
+            raise ValueError(f"Image resolution ({image.width}x{image.height}) is below minimum of {min_resolution[0]}x{min_resolution[1]}.")
             
-        print("Image validation successful.")
-        return True
-
-    except requests.exceptions.RequestException as e:
-        raise ValueError(f"Network error or invalid URL. Could not fetch image: {e}")
-    except Image.DecompressionBombError:
-        raise ValueError("Image is too large and could be a decompression bomb.")
+        return image
+        
     except Exception as e:
-        raise ValueError(f"Image is corrupt or unreadable: {e}")
+        raise ValueError(f"Image is corrupt, unreadable, or invalid: {e}")
+
 
 try:
     from qwen_vl_utils import process_vision_info

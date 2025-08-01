@@ -3,10 +3,11 @@ import gc
 import json
 import argparse
 import torch
-from model_utils import setup_environment, load_model_adaptive, load_processor, run_inference, validate_image_url
+from model_utils import setup_environment, load_model_adaptive, load_processor, run_inference, load_and_validate_image
 from prompt_engineering import create_analysis_prompt, create_placement_prompt
 
 def load_config(filepath="config.json"):
+    """Loads configuration from a JSON file."""
     try:
         with open(filepath, 'r') as f: return json.load(f)
     except FileNotFoundError:
@@ -19,9 +20,17 @@ def main(args):
     print("-----------------------------------------")
     
     try:
-        validate_image_url(args.image_url)
+        print("Loading and validating image source...")
+        if args.image_url:
+            pil_image = load_and_validate_image(args.image_url, source_type='url')
+        elif args.image_file:
+            pil_image = load_and_validate_image(args.image_file, source_type='file')
+        elif args.image_base64:
+            pil_image = load_and_validate_image(args.image_base64, source_type='base64')
+        print("Image successfully loaded and validated.")
+
     except ValueError as e:
-        print(f"\n[FATAL] Image Validation Error: {e}"); exit()
+        print(f"\n[FATAL] Image Error: {e}"); exit()
 
     setup_environment()
     if torch.cuda.is_available(): torch.cuda.empty_cache()
@@ -35,17 +44,15 @@ def main(args):
         processor = load_processor()
 
         print("\nAnalyzing room image...")
-        _, analysis_messages = create_analysis_prompt(args.image_url)
+        _, analysis_messages = create_analysis_prompt(pil_image)
         analysis_output, _, success = run_inference(model, processor, {'messages': analysis_messages}, max_new_tokens=100)
         
         if not success or not analysis_output: raise RuntimeError("Failed to analyze the room image.")
-        
         room_analysis = analysis_output[0]
         print(f"Analysis complete: {room_analysis}")
 
         print("\nGenerating furniture placement...")
-        _, placement_messages = create_placement_prompt(args.room_type, args.style, args.image_url, room_analysis, furniture_config, style_materials)
-        
+        _, placement_messages = create_placement_prompt(args.room_type, args.style, pil_image, room_analysis, furniture_config, style_materials)
         final_output, _, success = run_inference(model, processor, {'messages': placement_messages}, max_new_tokens=180)
         
         if success and final_output:
@@ -63,9 +70,15 @@ def main(args):
         print("Script finished.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="AI for Interior Furniture Placement", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--room_type", type=str, default="living room", help="Type of the room to design.") 
-    parser.add_argument("--style", type=str, default="industrial", help="Desired interior design style.") 
-    parser.add_argument("--image_url", type=str, default="https://photos.zillowstatic.com/fp/3c83c384a192683219780302babe5ea9-p_f.jpg", help="URL of the empty room image.")
+    parser = argparse.ArgumentParser(description="AI Interior Designer. Provide one image source.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--image_url", type=str, help="URL of the empty room image.")
+    group.add_argument("--image_file", type=str, help="Local file path of the empty room image.")
+    group.add_argument("--image_base64", type=str, help="Base64 encoded string of the image.")
+    
+    parser.add_argument("--room_type", type=str, default="living room", help="Type of the room to design.")
+    parser.add_argument("--style", type=str, default="industrial", help="Desired interior design style.")
+    
     args = parser.parse_args()
     main(args)
