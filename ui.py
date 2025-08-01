@@ -93,4 +93,4 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue=gr.themes.colors.blue, secondary
 
 if __name__ == "__main__":
     print("Launching Gradio UI...")
-    demo.launch(public=True)
+    demo.launch()
