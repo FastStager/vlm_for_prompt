@@ -29,12 +29,17 @@ def load_essentials():
 def handler(job):
     """
     The handler for the RunPod worker. Accepts image_url or image_base64.
+    All arguments except for the image are optional.
     """
     job_input = job.get('input', {})
+    
+    print(f"DEBUG: Received job input: {json.dumps(job_input)}")
+
     load_essentials()
 
     image_url = job_input.get("image_url")
     image_base64 = job_input.get("image_base64")
+
     room_type = job_input.get("room_type", "living room")
     style = job_input.get("style", "industrial")
     max_tokens = job_input.get("max_tokens", 180)
