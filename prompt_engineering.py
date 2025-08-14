@@ -1,22 +1,16 @@
-import random
 from design_rules import RULES
 
 def create_analysis_prompt(image_input):
-    """Creates the prompt to analyze the visual properties of the room."""
     system_prompt = "You are a computer vision expert. Your task is to identify all permanent features of a room."
     user_prompt = "In one sentence, describe the room's unchangeable features: wall and floor color/material, and the exact locations of all windows, doors, and fireplaces. Be precise."
     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": [{"type": "image", "image": image_input}, {"type": "text", "text": user_prompt}]}]
     return "Analyze the provided image for permanent features.", messages
 
 def create_placement_prompt(room_type, style, image_input, room_analysis, furniture_config, style_materials):
-    """
-    Creates a prompt with a strict hierarchy to prevent hallucinations while applying design rules.
-    """
     if room_type in furniture_config:
         essential_furniture = ", ".join(furniture_config[room_type]["essential"])
         task_instruction = f"Your creative palette of essential furniture for a {room_type} includes: {essential_furniture}."
     else:
-        print(f"Info: Room type '{room_type}' not in config. The VLM will infer essential items.")
         task_instruction = f"Use your knowledge to determine and incorporate essential furniture for a '{room_type}'."
 
     if style not in style_materials:

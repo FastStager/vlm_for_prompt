@@ -1,6 +1,4 @@
 import runpod
-import os
-import torch
 import json
 from model_utils import setup_environment, load_model_adaptive, load_processor, run_inference, validate_and_process_image_input
 from prompt_engineering import create_analysis_prompt, create_placement_prompt
@@ -8,47 +6,36 @@ from prompt_engineering import create_analysis_prompt, create_placement_prompt
 model, processor, config = None, None, None
 
 def load_essentials():
-    """Loads the model, processor, and config into memory."""
     global model, processor, config
     
     if model is None or processor is None:
-        print("Performing cold start: Loading model and processor...")
         setup_environment()
         model, _, _ = load_model_adaptive()
         processor = load_processor()
-        print("Model and processor loaded.")
 
     if config is None:
         try:
             with open("config.json", 'r') as f:
                 config = json.load(f)
-            print("Configuration loaded.")
         except FileNotFoundError:
             raise RuntimeError("FATAL: config.json not found.")
 
 def handler(job):
-    """
-    The handler for the RunPod worker. Accepts image_url or image_base64.
-    All arguments except for the image are optional.
-    """
     job_input = job.get('input', {})
-    
-    print(f"DEBUG: Received job input: {json.dumps(job_input)}")
-
     load_essentials()
 
     image_url = job_input.get("image_url")
     image_base64 = job_input.get("image_base64")
+    
+    try:
+        image_input = validate_and_process_image_input(image_url=image_url, image_base64=image_base64)
+    except ValueError as e:
+        return {"error": f"Image Input Error: {e}"}
 
     room_type = job_input.get("room_type", "living room")
     style = job_input.get("style", "industrial")
     max_tokens = job_input.get("max_tokens", 180)
     important_prompt = job_input.get("important_prompt", "")
-
-    try:
-        image_input = validate_and_process_image_input(image_url=image_url, image_base64=image_base64)
-    except ValueError as e:
-        return {"error": f"Image Input Error: {e}"}
 
     furniture_config = config.get("FURNITURE_CONFIG", {})
     style_materials = config.get("STYLE_MATERIALS", {})
