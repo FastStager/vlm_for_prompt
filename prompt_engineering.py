@@ -13,40 +13,36 @@ def create_placement_prompt(room_type, style, image_input, room_analysis, furnit
         essential_furniture = f"essential furniture for a '{room_type}'"
 
     if style not in style_materials:
-        style_details = "appropriate materials and colors"
         materials = "appropriate materials"
         colors = "a cohesive palette"
     else:
         style_info = style_materials[style]
         materials = style_info.get('materials', style_info.get('wood', 'appropriate materials'))
         colors = ", ".join(style_info.get('colors', ['cohesive colors']))
-        style_details = f"materials like {materials} and a color palette of {colors}"
-
-    # The critical rule remains the top priority.
-    universal_rules = RULES.get("universal_absolute", [])
-    rules_text = " ".join(universal_rules)
 
     system_prompt = (
-        "You are a specialized AI that generates precise, machine-readable layout instructions for an image editing model. "
-        "Your output is not for humans; it is a direct command for another AI. "
-        "It must be concise, descriptive, and spatially accurate."
-        "\n\n**CRITICAL DIRECTIVE:**\n"
-        f"Your absolute, non-negotiable highest priority is to follow this rule: '{rules_text}'. "
-        "Placing furniture that blocks doors or exits is a fatal error. The room analysis is your ground truth."
-        "\n\n**OUTPUT TEMPLATE (MUST be followed exactly):**\n"
-        "\"Place a [material] [furniture item] [relative position], a [color] [object] [spatially related to first], and [another object] [near/by/next to some anchor]. Add [small decor elements] that match [color palette or anchor element].\""
+        "You are a Spatial Reasoning AI. Your sole purpose is to generate a single, machine-readable instruction string for an image editing model. Your reasoning must be explicit in your output."
+        "\n\n**CORE LOGIC: SPATIAL BOUNDARY AWARENESS**\n"
+        "1.  **Identify No-Go Zones:** From the 'Ground Truth' analysis, identify the exact location of all doors and entryways. These are forbidden areas.\n"
+        "2.  **Use Safe Anchors:** Place the largest furniture item (e.g., sofa, bed) first. You MUST position it relative to a permanent, safe feature (like a window, a fireplace, or a wall explicitly opposite the door).\n"
+        "3.  **Generate Spatially-Aware Instructions:** Your output instruction string MUST use language that is unambiguous and inherently respects the No-Go Zones. Your output is your proof of reasoning."
+        "\n\n**Example of Bad vs. Good Instructions:**\n"
+        "-   **BAD (Ambiguous):** `Place a sofa against the far wall.` (The door could be on that wall).\n"
+        "-   **GOOD (Spatially-Aware):** `Place a sofa against the wall opposite the main door.` (Unambiguous and safe).\n"
+        "-   **GOOD (Spatially-Aware):** `Place a bed between the two windows on the left wall, leaving the doorway on the right wall clear.` (Uses multiple anchors and explicitly states clearance)."
+        "\n\n**OUTPUT TEMPLATE (Follow Precisely):**\n"
+        "\"Place a [material] [main furniture] [spatially-aware position referencing safe anchors], a [second item] [position relative to the first item or another anchor], and a [third item] [final position]. Decorate with [decor elements] on [a surface].\""
         "\n\n**FORMATTING RULES:**\n"
-        "- Start your response *directly* with the word 'Place'. No introductory phrases or explanations.\n"
-        "- The entire output must be a single, unbroken sentence.\n"
-        "- Be descriptive with materials and colors, but concise with locations (e.g., 'against the back wall', 'centered under the window', 'to the left of the fireplace')."
+        "-   Start your response *directly* with 'Place'. No preamble.\n"
+        "-   The entire output must be one single sentence."
     )
     
     user_prompt = (
         f"**Ground Truth (Unchangeable Room):** \"{room_analysis}\"\n\n"
-        f"**Task:** Generate a single-line instruction string for a {style} {room_type} using the required template.\n"
-        f"**CRITICAL REMINDER:** Your layout MUST respect all doors and entryways from the analysis. Do not obstruct them.\n\n"
+        f"**Task:** Generate a single-line instruction string for a {style} {room_type}.\n\n"
+        f"**CRITICAL:** Your instruction string must be spatially coherent and explicitly avoid the no-go zones identified in the Ground Truth. Use the 'Good Instruction' examples as your guide for phrasing.\n\n"
         f"**- Furniture to Use:** {essential_furniture}.\n"
-        f"**- Style:** {style} (use {style_details}).\n\n"
+        f"**- Style:** {style} (materials like {materials}; colors like {colors}).\n\n"
         "Generate the instruction string now."
     )
 
