@@ -9,43 +9,45 @@ def create_analysis_prompt(image_input):
 def create_placement_prompt(room_type, style, image_input, room_analysis, furniture_config, style_materials):
     if room_type in furniture_config:
         essential_furniture = ", ".join(furniture_config[room_type]["essential"])
-        task_instruction = f"Your creative palette of essential furniture for a {room_type} includes: {essential_furniture}"
     else:
-        task_instruction = f"Use your knowledge to determine and incorporate essential furniture for a '{room_type}'."
+        essential_furniture = f"essential furniture for a '{room_type}'"
 
     if style not in style_materials:
-        style_details = "materials and colors appropriate for the style"
+        style_details = "appropriate materials and colors"
+        materials = "appropriate materials"
+        colors = "a cohesive palette"
     else:
         style_info = style_materials[style]
         materials = style_info.get('materials', style_info.get('wood', 'appropriate materials'))
         colors = ", ".join(style_info.get('colors', ['cohesive colors']))
-        style_details = f"Use materials like {materials} and a color palette of {colors}."
-    
+        style_details = f"materials like {materials} and a color palette of {colors}"
+
+    # The critical rule remains the top priority.
     universal_rules = RULES.get("universal_absolute", [])
-    specific_rules = RULES.get(room_type, RULES["default"])
-    combined_rules = universal_rules + specific_rules
-    rules_text = " ".join(combined_rules)
+    rules_text = " ".join(universal_rules)
 
     system_prompt = (
-        f"You are an expert interior designer specializing in {style} design. "
-        f"Your primary function is to place furniture in a {room_type} based on an image analysis."
-        "\n\n**CRITICAL SAFETY AND FUNCTIONALITY DIRECTIVE:**\n"
-        "Your absolute, non-negotiable highest priority is to **NEVER block doors, entryways, or exits.** "
-        "Placing any furniture, especially large items like a sofa, in front of a door is a critical failure. "
-        "The room analysis provides the ground truth for door locations. You MUST adhere to it strictly."
-        "\n\n**Design Guidelines:**\n"
-        f"Apply these principles in your design: '{rules_text}'"
-        "\n\n**Output Format:**\n"
-        "Your final output MUST be a single, detailed sentence following this exact narrative structure: "
-        "'Place a [detailed material] [primary furniture item] [relative position], accompanied by a matching [secondary furniture item]. Add a [distinct object] [spatially related], and use a pair of identical [small lamps/decor] to create symmetry on [a surface]. Enhance with [ambient decor] to complement the [color palette or material].'"
+        "You are a specialized AI that generates precise, machine-readable layout instructions for an image editing model. "
+        "Your output is not for humans; it is a direct command for another AI. "
+        "It must be concise, descriptive, and spatially accurate."
+        "\n\n**CRITICAL DIRECTIVE:**\n"
+        f"Your absolute, non-negotiable highest priority is to follow this rule: '{rules_text}'. "
+        "Placing furniture that blocks doors or exits is a fatal error. The room analysis is your ground truth."
+        "\n\n**OUTPUT TEMPLATE (MUST be followed exactly):**\n"
+        "\"Place a [material] [furniture item] [relative position], a [color] [object] [spatially related to first], and [another object] [near/by/next to some anchor]. Add [small decor elements] that match [color palette or anchor element].\""
+        "\n\n**FORMATTING RULES:**\n"
+        "- Start your response *directly* with the word 'Place'. No introductory phrases or explanations.\n"
+        "- The entire output must be a single, unbroken sentence.\n"
+        "- Be descriptive with materials and colors, but concise with locations (e.g., 'against the back wall', 'centered under the window', 'to the left of the fireplace')."
     )
     
     user_prompt = (
-        f"**Ground Truth - Unchangeable Room Features:** \"{room_analysis}\"\n\n"
-        f"**Task:** Based on the unchangeable room features described in the ground truth, create a furniture plan. "
-        f"**CRITICAL REMINDER:** Do not place any items where they would obstruct the doors or entryways identified in the analysis. "
-        f"Your task is to place the following: {task_instruction}. Use {style_details}. "
-        "Ensure your layout perfectly fits the existing room. Follow the required sentence structure precisely."
+        f"**Ground Truth (Unchangeable Room):** \"{room_analysis}\"\n\n"
+        f"**Task:** Generate a single-line instruction string for a {style} {room_type} using the required template.\n"
+        f"**CRITICAL REMINDER:** Your layout MUST respect all doors and entryways from the analysis. Do not obstruct them.\n\n"
+        f"**- Furniture to Use:** {essential_furniture}.\n"
+        f"**- Style:** {style} (use {style_details}).\n\n"
+        "Generate the instruction string now."
     )
 
     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": [{"type": "image", "image": image_input}, {"type": "text", "text": user_prompt}]}]
