@@ -1,4 +1,7 @@
 RULES = {
+    "universal_absolute": [
+        "**CRITICAL RULE: Under NO circumstances can any furniture block, cover, or impede access to any doors, entryways, or exits.** This is the most important instruction and must be followed without exception."
+    ],
     "living room": [
         "Position the main seating (like a sofa) to face a focal point such as a fireplace, TV, or window view.",
         "Ensure there is space between furniture and walls to create a sense of openness.",
@@ -17,10 +20,10 @@ RULES = {
     ],
     "dining room": [
         "Center the dining table directly under the main light fixture.",
-        "Ensure at least a feet of clearance around the table for chairs to be pulled out comfortably."
+        "Ensure at least 3 feet of clearance around the table for chairs to be pulled out comfortably."
     ],
     "default": [
-        "Ensure all major pathways are at least a feet wide for clear movement.",
+        "Ensure all major pathways are at least 3 feet wide for clear movement.",
         "Group furniture to create functional, defined zones.",
         "Do not block natural light sources.",
         "Balance the visual weight of furniture throughout the room."

@@ -9,7 +9,7 @@ def create_analysis_prompt(image_input):
 def create_placement_prompt(room_type, style, image_input, room_analysis, furniture_config, style_materials):
     if room_type in furniture_config:
         essential_furniture = ", ".join(furniture_config[room_type]["essential"])
-        task_instruction = f"Your creative palette of essential furniture for a {room_type} includes: {essential_furniture}."
+        task_instruction = f"Your creative palette of essential furniture for a {room_type} includes: {essential_furniture}"
     else:
         task_instruction = f"Use your knowledge to determine and incorporate essential furniture for a '{room_type}'."
 
@@ -21,22 +21,31 @@ def create_placement_prompt(room_type, style, image_input, room_analysis, furnit
         colors = ", ".join(style_info.get('colors', ['cohesive colors']))
         style_details = f"Use materials like {materials} and a color palette of {colors}."
     
-    rules_for_room = RULES.get(room_type, RULES["default"])
-    rules_text = " ".join(rules_for_room)
+    universal_rules = RULES.get("universal_absolute", [])
+    specific_rules = RULES.get(room_type, RULES["default"])
+    combined_rules = universal_rules + specific_rules
+    rules_text = " ".join(combined_rules)
 
     system_prompt = (
-        f"You are an expert interior designer for a {style} {room_type}. "
-        f"**Your absolute highest priority is to respect the existing room structure. You must NOT suggest placing furniture where it would block or contradict windows, doors, or fixed features identified in the room analysis.** "
-        f"As a secondary guideline, creatively apply these design principles: '{rules_text}'. "
-        "Your final output MUST be a single, detailed sentence following this narrative structure: "
+        f"You are an expert interior designer specializing in {style} design. "
+        f"Your primary function is to place furniture in a {room_type} based on an image analysis."
+        "\n\n**CRITICAL SAFETY AND FUNCTIONALITY DIRECTIVE:**\n"
+        "Your absolute, non-negotiable highest priority is to **NEVER block doors, entryways, or exits.** "
+        "Placing any furniture, especially large items like a sofa, in front of a door is a critical failure. "
+        "The room analysis provides the ground truth for door locations. You MUST adhere to it strictly."
+        "\n\n**Design Guidelines:**\n"
+        f"Apply these principles in your design: '{rules_text}'"
+        "\n\n**Output Format:**\n"
+        "Your final output MUST be a single, detailed sentence following this exact narrative structure: "
         "'Place a [detailed material] [primary furniture item] [relative position], accompanied by a matching [secondary furniture item]. Add a [distinct object] [spatially related], and use a pair of identical [small lamps/decor] to create symmetry on [a surface]. Enhance with [ambient decor] to complement the [color palette or material].'"
     )
     
     user_prompt = (
-        f"**Ground Truth - The Unchangeable Room:** \"{room_analysis}\"\n\n"
-        f"Based on the unchangeable room features described above, create a furniture plan. "
-        f"{task_instruction} {style_details} "
-        "Ensure your layout perfectly fits the existing room without blocking any features. Follow the required sentence structure precisely."
+        f"**Ground Truth - Unchangeable Room Features:** \"{room_analysis}\"\n\n"
+        f"**Task:** Based on the unchangeable room features described in the ground truth, create a furniture plan. "
+        f"**CRITICAL REMINDER:** Do not place any items where they would obstruct the doors or entryways identified in the analysis. "
+        f"Your task is to place the following: {task_instruction}. Use {style_details}. "
+        "Ensure your layout perfectly fits the existing room. Follow the required sentence structure precisely."
     )
 
     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": [{"type": "image", "image": image_input}, {"type": "text", "text": user_prompt}]}]
