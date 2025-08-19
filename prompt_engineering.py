@@ -21,29 +21,25 @@ def create_placement_prompt(room_type, style, image_input, room_analysis, furnit
         colors = ", ".join(style_info.get('colors', ['cohesive colors']))
 
     system_prompt = (
-        "You are a Spatial Reasoning AI. Your sole purpose is to generate a single, machine-readable instruction string for an image editing model. Your reasoning must be explicit in your output."
-        "\n\n**CORE LOGIC: SPATIAL BOUNDARY AWARENESS**\n"
-        "1.  **Identify No-Go Zones:** From the 'Ground Truth' analysis, identify the exact location of all doors and entryways. These are forbidden areas.\n"
-        "2.  **Use Safe Anchors:** Place the largest furniture item (e.g., sofa, bed) first. You MUST position it relative to a permanent, safe feature (like a window, a fireplace, or a wall explicitly opposite the door).\n"
-        "3.  **Generate Spatially-Aware Instructions:** Your output instruction string MUST use language that is unambiguous and inherently respects the No-Go Zones. Your output is your proof of reasoning."
-        "\n\n**Example of Bad vs. Good Instructions:**\n"
-        "-   **BAD (Ambiguous):** `Place a sofa against the far wall.` (The door could be on that wall).\n"
-        "-   **GOOD (Spatially-Aware):** `Place a sofa against the wall opposite the main door.` (Unambiguous and safe).\n"
-        "-   **GOOD (Spatially-Aware):** `Place a bed between the two windows on the left wall, leaving the doorway on the right wall clear.` (Uses multiple anchors and explicitly states clearance)."
-        "\n\n**OUTPUT TEMPLATE (Follow Precisely):**\n"
-        "\"Place a [material] [main furniture] [spatially-aware position referencing safe anchors], a [second item] [position relative to the first item or another anchor], and a [third item] [final position]. Decorate with [decor elements] on [a surface].\""
-        "\n\n**FORMATTING RULES:**\n"
-        "-   Start your response *directly* with 'Place'. No preamble.\n"
-        "-   The entire output must be one single sentence."
+        "You are an AI that generates a single, direct instruction string for an image editing model. Your output must be spatially precise and follow a strict logical process."
+        "\n\n**CORE LOGIC:**\n"
+        "1.  **Identify the Door:** Read the 'Ground Truth' analysis to find which wall the door is on (e.g., 'right wall', 'back wall').\n"
+        "2.  **Select the Opposite Wall:** Identify the wall directly opposite the door. This is the **only** valid location for the main sofa or bed.\n"
+        "3.  **Generate the Command:** Create a single-sentence command placing the main furniture on that specific, valid wall. All other furniture is placed relative to it."
+        "\n\n**EXAMPLE:**\n"
+        "-   **Ground Truth Input:** 'The room has a single door on the right wall and a window on the back wall.'\n"
+        "-   **Your Correct Output:** 'Place a reclaimed wood sofa against the left wall, a metal coffee table in front of it, and a TV stand against the back wall under the window. Add two small lamps on the TV stand.'"
+        "\n\n**OUTPUT TEMPLATE:**\n"
+        "\"Place a [material] [furniture] [at the specific location that avoids the door], a [second item] [relative to the first], and a [third item] [near another feature]. Add [decor] on [a surface].\""
     )
     
     user_prompt = (
-        f"**Ground Truth (Unchangeable Room):** \"{room_analysis}\"\n\n"
-        f"**Task:** Generate a single-line instruction string for a {style} {room_type}.\n\n"
-        f"**CRITICAL:** Your instruction string must be spatially coherent and explicitly avoid the no-go zones identified in the Ground Truth. Use the 'Good Instruction' examples as your guide for phrasing.\n\n"
-        f"**- Furniture to Use:** {essential_furniture}.\n"
+        f"**Ground Truth:** \"{room_analysis}\"\n\n"
+        f"**Task:** Using the CORE LOGIC, generate a single, unambiguous command string for a {style} {room_type}.\n\n"
+        f"**- Critical Instruction:** Find the wall with the door in the Ground Truth. Your command MUST place the sofa on the wall OPPOSITE to it.\n"
+        f"**- Furniture:** {essential_furniture}.\n"
         f"**- Style:** {style} (materials like {materials}; colors like {colors}).\n\n"
-        "Generate the instruction string now."
+        "Generate the command string now. Be specific and avoid vague terms."
     )
 
     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": [{"type": "image", "image": image_input}, {"type": "text", "text": user_prompt}]}]
