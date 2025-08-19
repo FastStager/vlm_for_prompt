@@ -21,25 +21,26 @@ def create_placement_prompt(room_type, style, image_input, room_analysis, furnit
         colors = ", ".join(style_info.get('colors', ['cohesive colors']))
 
     system_prompt = (
-        "You are an AI that generates a single, direct instruction string for an image editing model. Your output must be spatially precise and follow a strict logical process."
-        "\n\n**CORE LOGIC:**\n"
-        "1.  **Identify the Door:** Read the 'Ground Truth' analysis to find which wall the door is on (e.g., 'right wall', 'back wall').\n"
-        "2.  **Select the Opposite Wall:** Identify the wall directly opposite the door. This is the **only** valid location for the main sofa or bed.\n"
-        "3.  **Generate the Command:** Create a single-sentence command placing the main furniture on that specific, valid wall. All other furniture is placed relative to it."
-        "\n\n**EXAMPLE:**\n"
-        "-   **Ground Truth Input:** 'The room has a single door on the right wall and a window on the back wall.'\n"
-        "-   **Your Correct Output:** 'Place a reclaimed wood sofa against the left wall, a metal coffee table in front of it, and a TV stand against the back wall under the window. Add two small lamps on the TV stand.'"
-        "\n\n**OUTPUT TEMPLATE:**\n"
-        "\"Place a [material] [furniture] [at the specific location that avoids the door], a [second item] [relative to the first], and a [third item] [near another feature]. Add [decor] on [a surface].\""
+        "You are a Spatial Layout AI that generates a single, machine-readable instruction for an image editing model. Your primary directive is to maintain a clear, unobstructed path from all doors and entryways."
+        "\n\n**PLACEMENT STRATEGY LOGIC (Follow this hierarchy):**\n"
+        "1.  **IDENTIFY CONFLICT:** The main furniture (sofa/bed) should face the room's focal point (fireplace/main window). Is the door located on the same wall or a wall adjacent to the focal point? If so, this is a conflict.\n"
+        "2.  **RESOLVE CONFLICT:**\n"
+        "    -   **If NO CONFLICT:** Place the sofa against the wall opposite the focal point. (e.g., 'Place a sofa against the left wall, facing the fireplace on the right wall.')\n"
+        "    -   **If there IS A CONFLICT:** You MUST place the sofa **perpendicular** to the focal point wall. This creates a clear walkway from the door. Your instruction must be explicit about this orientation. (e.g., 'Place a sofa perpendicular to the fireplace wall to create an open walkway from the adjacent door.')\n"
+        "3.  **FINAL COMMAND:** Build the rest of the command around this primary, safe placement."
+        "\n\n**EXAMPLE OF CONFLICT RESOLUTION:**\n"
+        "-   **Ground Truth:** '...a door on the left side of the back wall and a fireplace on the right side of the same back wall.'\n"
+        "-   **Your Correct Output:** 'Place a reclaimed wood sofa perpendicular to the back wall, facing the fireplace, leaving a wide path from the door. Add a coffee table in front of the sofa and a TV stand on the opposite wall.'"
+        "\n\n**TEMPLATE:** \"Place a [material] [furniture] [SPECIFIC, SAFE, and ORIENTED position], a [second item] [relative position], and a [third item] [near another feature].\""
     )
     
     user_prompt = (
         f"**Ground Truth:** \"{room_analysis}\"\n\n"
-        f"**Task:** Using the CORE LOGIC, generate a single, unambiguous command string for a {style} {room_type}.\n\n"
-        f"**- Critical Instruction:** Find the wall with the door in the Ground Truth. Your command MUST place the sofa on the wall OPPOSITE to it.\n"
+        f"**Task:** Generate a single command string using the PLACEMENT STRATEGY LOGIC.\n\n"
+        f"**- Critical Instruction:** Analyze if the door and focal point conflict. If they do, you MUST use a perpendicular placement to guarantee a clear path from the door.\n"
         f"**- Furniture:** {essential_furniture}.\n"
-        f"**- Style:** {style} (materials like {materials}; colors like {colors}).\n\n"
-        "Generate the command string now. Be specific and avoid vague terms."
+        f"**- Style:** {style} (materials: {materials}; colors: {colors}).\n\n"
+        "Generate the specific command string now. Your instruction for the sofa's position and orientation is the most important part."
     )
 
     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": [{"type": "image", "image": image_input}, {"type": "text", "text": user_prompt}]}]
