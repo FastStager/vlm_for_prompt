@@ -21,26 +21,29 @@ def create_placement_prompt(room_type, style, image_input, room_analysis, furnit
         colors = ", ".join(style_info.get('colors', ['cohesive colors']))
 
     system_prompt = (
-        "You are a Spatial Layout AI that generates a single, machine-readable instruction for an image editing model. Your primary directive is to maintain a clear, unobstructed path from all doors and entryways."
-        "\n\n**PLACEMENT STRATEGY LOGIC (Follow this hierarchy):**\n"
-        "1.  **IDENTIFY CONFLICT:** The main furniture (sofa/bed) should face the room's focal point (fireplace/main window). Is the door located on the same wall or a wall adjacent to the focal point? If so, this is a conflict.\n"
-        "2.  **RESOLVE CONFLICT:**\n"
-        "    -   **If NO CONFLICT:** Place the sofa against the wall opposite the focal point. (e.g., 'Place a sofa against the left wall, facing the fireplace on the right wall.')\n"
-        "    -   **If there IS A CONFLICT:** You MUST place the sofa **perpendicular** to the focal point wall. This creates a clear walkway from the door. Your instruction must be explicit about this orientation. (e.g., 'Place a sofa perpendicular to the fireplace wall to create an open walkway from the adjacent door.')\n"
-        "3.  **FINAL COMMAND:** Build the rest of the command around this primary, safe placement."
-        "\n\n**EXAMPLE OF CONFLICT RESOLUTION:**\n"
-        "-   **Ground Truth:** '...a door on the left side of the back wall and a fireplace on the right side of the same back wall.'\n"
-        "-   **Your Correct Output:** 'Place a reclaimed wood sofa perpendicular to the back wall, facing the fireplace, leaving a wide path from the door. Add a coffee table in front of the sofa and a TV stand on the opposite wall.'"
-        "\n\n**TEMPLATE:** \"Place a [material] [furniture] [SPECIFIC, SAFE, and ORIENTED position], a [second item] [relative position], and a [third item] [near another feature].\""
+        "You are a Spatial Layout AI that generates a single, machine-readable instruction for an image editing model. Your output must be one complete sentence that is both spatially intelligent and fully comprehensive."
+        "\n\n**1. PLACEMENT STRATEGY LOGIC (Highest Priority):**\n"
+        "-   **IDENTIFY CONFLICT:** The sofa must face the focal point (fireplace/main window). Is the door on the same wall or an adjacent wall to the focal point? If so, this is a conflict.\n"
+        "-   **RESOLVE CONFLICT:**\n"
+        "    -   **No Conflict:** Place the sofa against the wall opposite the focal point.\n"
+        "    -   **Conflict Exists:** Place the sofa **perpendicular** to the focal point wall to create a clear walkway from the door. This is a mandatory rule.\n"
+        "\n**2. COMPLETENESS REQUIREMENT (Equally High Priority):**\n"
+        "-   You will be given a 'Placement Checklist' of essential furniture.\n"
+        "-   Your final, single-sentence output **MUST** include placement instructions for **EVERY** item on that list. Do not stop after placing just the sofa.\n"
+        "\n**EXAMPLE OF A COMPLETE, CORRECT OUTPUT:**\n"
+        "-   **Ground Truth:** '...a door on the left and a fireplace on the right of the back wall.'\n"
+        "-   **Checklist:** 'sofa, coffee table, tv stand'.\n"
+        "-   **Your Correct Output:** 'Place a reclaimed wood sofa perpendicular to the back wall to create a clear path from the door, add a matching coffee table in front of it, and position a black metal TV stand on the opposite wall.'"
+        "\n\n**TEMPLATE:** \"Place a [main item] [safe/oriented position], a [second item] [relative position], and a [third item] [final position].\""
     )
     
     user_prompt = (
         f"**Ground Truth:** \"{room_analysis}\"\n\n"
-        f"**Task:** Generate a single command string using the PLACEMENT STRATEGY LOGIC.\n\n"
-        f"**- Critical Instruction:** Analyze if the door and focal point conflict. If they do, you MUST use a perpendicular placement to guarantee a clear path from the door.\n"
-        f"**- Furniture:** {essential_furniture}.\n"
+        f"**Task:** Generate ONE complete sentence using the Placement Strategy and the Checklist below.\n\n"
+        f"**- Critical Logic:** First, determine if the door and focal point conflict. If so, use the perpendicular placement strategy. The path from the door MUST be clear.\n"
+        f"**- Placement Checklist:** Your single sentence MUST include placement instructions for every item on this list: **{essential_furniture}**. Do not omit any.\n"
         f"**- Style:** {style} (materials: {materials}; colors: {colors}).\n\n"
-        "Generate the specific command string now. Your instruction for the sofa's position and orientation is the most important part."
+        "Generate the complete and spatially correct command string now."
     )
 
     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": [{"type": "image", "image": image_input}, {"type": "text", "text": user_prompt}]}]
